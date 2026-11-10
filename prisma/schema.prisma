@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  FAILED
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String
+  firstName      String?
+  lastName       String?
+  phone          String?   // Celular para avisos de envío o Yape
+  documentType   String?   // "DNI" o "RUC"
+  documentNumber String?   // Número del documento
+  role           Role      @default(CUSTOMER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  addresses      Address[]
+  cart           Cart?
+  orders         Order[]
+}
+
+model Address {
+  id            String   @id @default(uuid())
+  userId        String
+  alias         String?  // "Casa", "Oficina"
+  recipientName String
+  phone         String
+  addressLine1  String   // Av. Siempre Viva 123
+  addressLine2  String?  // Dpto 401, Urbanización
+  reference     String?  // "Frente al parque" (Muy usado en Perú)
+  city          String   // Distrito (Ej: Miraflores)
+  state         String   // Provincia (Ej: Lima)
+  country       String   @default("PE")
+  zipCode       String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique 
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[] 
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique // Para la URL: /producto/polo-negro
+  description String?
+  price       Decimal   @db.Decimal(10, 2) // Precio de venta (ya con IGV)
+  sku         String?   @unique // Código interno de almacén
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  isFeatured Boolean @default(false)
+  isOnSale   Boolean @default(false)
+
+  categoryId  Int?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  
+  // NUEVO: Un producto tiene variantes (talla, color) y fotos
+  variants    ProductVariant[]
+  images      ProductImage[]
+}
+
+model ProductVariant {
+  id          String    @id @default(uuid())
+  productId   String
+  sku         String?   @unique // SKU específico de esta talla/color
+  name        String    // Ej: "Talla M / Negro"
+  price       Decimal?  @db.Decimal(10, 2) // Si es nulo, usa el precio del producto base
+  stock       Int       @default(0) // Aquí se descuenta el stock real
+  
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+}
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  productId String
+  url       String
+  altText   String?
+  isMain    Boolean @default(false)
+  
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique 
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String
+  variantId String // Apunta a la variante (ej: Polo talla M)
+  quantity  Int     @default(1)
+
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([cartId, variantId]) 
+}
+
+model Order {
+  id                String        @id @default(uuid())
+  orderNumber       Int           @unique @default(autoincrement()) // Número amigable: #1001
+  userId            String
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  
+  subtotal          Decimal       @db.Decimal(10, 2) // Suma de productos
+  shippingCost      Decimal       @db.Decimal(10, 2) @default(0) // Costo de envío
+  total             Decimal       @db.Decimal(10, 2) // Subtotal + Envío
+  
+  // --- Datos de Envío ---
+  shippingRecipient String
+  shippingPhone     String
+  shippingAddress   String
+  shippingCity      String
+  shippingState     String
+
+  // --- Facturación Electrónica ---
+  billingDocType    String?       // DNI o RUC
+  billingDocNumber  String?
+  billingName       String?       
+  invoiceStatus     InvoiceStatus @default(PENDING) // Para saber si Nubefact ya respondió
+  invoicePdfUrl     String?       // URL del PDF generado
+  invoiceXmlUrl     String?       // URL del XML (para SUNAT)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation(fields: [userId], references: [id])
+  items             OrderItem[]
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  variantId   String
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2) // Precio histórico (¡Crucial!)
+  productName String  // Snapshot del nombre por si borras el producto
+
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+}
