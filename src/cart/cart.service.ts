@@ -8,19 +8,14 @@ export class CartService {
 
   constructor(private prisma: PrismaService, private notificationsGateway: NotificationsGateway) {}
 
-  // 👇 1. Agregar al carrito (antes llamado 'create')
   async addItem(userId: string, dto: CreateCartDto) {
 
-
-
-    // 1. Buscamos o creamos el carrito
     let cart = await this.prisma.cart.findUnique({ where: { userId } });
 
     if (!cart) {
       cart = await this.prisma.cart.create({ data: { userId } });
     }
 
-    // 2. Verificamos si la variante ya está en el carrito
     const existingItem = await this.prisma.cartItem.findFirst({
       where: {
         cartId: cart.id,
@@ -28,9 +23,11 @@ export class CartService {
       },
     });
 
-    // 3. Verificamos el stock de la variante en la base de datos
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: dto.variantId },
+      include: {
+        product: true,
+      }
     });
 
     if (!variant) {
@@ -46,7 +43,6 @@ export class CartService {
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    // 4. Si ya existe, sumamos la cantidad
     if (existingItem) {
       return this.prisma.cartItem.update({
         where: { id: existingItem.id },
@@ -56,11 +52,10 @@ export class CartService {
 
     this.notificationsGateway.notifyAdminCartActivity({
       userName: user?.firstName || 'Cliente Anónimo',
-      productName: variant.name,
-      action: 'agregó al carrito'
+      productName: variant.product.name,
+      action: `agregó al carrito (${variant.name})`
     });
     
-    // 5. Si no existe, lo creamos
     return this.prisma.cartItem.create({
       data: {
         cartId: cart.id,
@@ -70,7 +65,6 @@ export class CartService {
     });
   }
 
-  // 👇 2. Obtener el carrito (ya lo tenías bien)
   async getCart(userId: string) {
     let cart = await this.prisma.cart.findUnique({
       where: { userId },
