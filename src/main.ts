@@ -25,7 +25,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: 'https://zentryshop.netlify.app',
+    origin: 'https://zentry-shop.netlify.app',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   })
