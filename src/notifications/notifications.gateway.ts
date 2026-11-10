@@ -2,7 +2,11 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
-  cors: { origin: 'http://localhost:4200' }, // Permite a Angular conectarse
+  cors: {
+    // 👇 Asegúrate de tener AMBAS URLs aquí
+    origin: ['http://localhost:4200', 'https://zentry-shop.netlify.app'],
+    credentials: true,
+  },
 })
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
