@@ -1,26 +1,68 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AddressService {
-  create(createAddressDto: CreateAddressDto) {
-    return 'This action adds a new address';
+
+  constructor(private prisma: PrismaService) {}
+
+  async create(userId: string, dto: CreateAddressDto) {
+
+    const count = await this.prisma.address.count({ where: { userId } });
+
+    const isDefault = count === 0 ? true : dto.isDefault;
+
+    if (isDefault) {
+
+      await this.prisma.address.updateMany({
+        where: { userId },
+        data: { isDefault: false },
+      });
+    }
+
+    return this.prisma.address.create({
+
+      data: { ...dto, userId, isDefault },
+    });
   }
 
-  findAll() {
-    return `This action returns all address`;
+  async findAll(userId: string) {
+    return this.prisma.address.findMany({
+      where: { userId },
+      orderBy: { isDefault: 'desc' }, // La default sale primero
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} address`;
+  async update(userId: string, id: string, dto: UpdateAddressDto) {
+
+    const address = await this.prisma.address.findFirst({ where: { id, userId } });
+
+    if (!address) throw new NotFoundException('Dirección no encontrada');
+
+    if (dto.isDefault) {
+
+      await this.prisma.address.updateMany({
+
+        where: { userId },
+        data: { isDefault: false },
+      });
+    }
+
+    return this.prisma.address.update({
+
+      where: { id },
+      data: dto,
+    });
   }
 
-  update(id: number, updateAddressDto: UpdateAddressDto) {
-    return `This action updates a #${id} address`;
-  }
+  async remove(userId: string, id: string) {
 
-  remove(id: number) {
-    return `This action removes a #${id} address`;
+    const address = await this.prisma.address.findFirst({ where: { id, userId } });
+    
+    if (!address) throw new NotFoundException('Dirección no encontrada');
+
+    return this.prisma.address.delete({ where: { id } });
   }
 }
