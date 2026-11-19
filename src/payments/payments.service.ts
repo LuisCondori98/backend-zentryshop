@@ -3,7 +3,7 @@ import { CulqiClient } from 'culqi-sdk';
 
 @Injectable()
 export class PaymentsService {
-  private culqi: CulqiClient;
+  private culqi?: CulqiClient;
 
   constructor() {
     this.culqi = new CulqiClient({
