@@ -2602,6 +2602,11 @@ cross-spawn@^7.0.3, cross-spawn@^7.0.6:
     shebang-command "^2.0.0"
     which "^2.0.1"
 
+culqi-sdk@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/culqi-sdk/-/culqi-sdk-0.1.1.tgz#d8e6d7dfdf61bc09c9db5a9bf8d0706b9c6b3040"
+  integrity sha512-I5WganMjNjI8Ol3gDz4H4F9DqfLKhQ9Op0f3H9hhYoQhAp/2OH74i76YMPxfWX6zwPHdJ2hkbuezN6jVsolIJA==
+
 debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.3.7, debug@^4.4.0, debug@^4.4.3, debug@~4.4.1:
   version "4.4.3"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.3.tgz#c6ae432d9bd9662582fce08709b038c58e9e3d6a"
@@ -5105,6 +5110,11 @@ strip-json-comments@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-3.1.1.tgz#31f1281b3832630434831c310c01cccda8cbe006"
   integrity sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==
+
+stripe@^23.2.0:
+  version "23.2.0"
+  resolved "https://registry.yarnpkg.com/stripe/-/stripe-23.2.0.tgz#886c3833d9287940dd7ddb0b2e5c84426c9455e9"
+  integrity sha512-0W0J4yA9qFO2rnF61v8Y62OiO2SmAR+Cv04VJaFUMpCxiq8lG5bxEYbeSMSpMDR9ofFZGd+Z/iUIgSFbOolmUw==
 
 strtok3@^10.3.4:
   version "10.7.0"
